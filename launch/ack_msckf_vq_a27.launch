@@ -1,0 +1,134 @@
+<launch>
+  
+  <!--tunable parameter configurations-->
+  <arg name="ackermann_update_v" default="true"/>
+  <arg name="ackermann_update_q" default="true"/>
+  <arg name="ackermann_update_v_ci" default="false"/>
+  <arg name="ackermann_update_q_ci" default="false"/>
+
+  <!--debug-->
+  <arg name="ackermann_msckf_use_ackermann" default="true"/>
+  <arg name="ackermann_msckf_use_a27_platform" default="true"/>
+  <arg name="ackermann_msckf_use_svd_ex" default="true"/>
+  <arg name="ackermann_msckf_use_debug" default="false"/>
+  <arg name="ackermann_robot" default="ackermann_msckf"/>
+  <arg name="rviz_ackermann_msckf"  default="true"/>
+
+  <arg name="output_path"   default="$(find ackermann_msckf)/_output_/"/>
+
+  <arg name="ackermann_msckf_use_offline_gyro_bias" default="false"/>
+  <arg name="ackermann_msckf_gyro_bias_a" default="0"/>
+  <arg name="ackermann_msckf_gyro_bias_b" default="0"/>
+  <arg name="ackermann_msckf_gyro_bias_c" default="0"/>
+
+  <arg name="ackermann_fixed_frame_id" default="world"/>
+  <arg name="ackermann_child_frame_id" default="ackermann_msckf_base_link"/>
+
+  <arg name="ackermann_calibration_file"
+    default="$(find ackermann_msckf)/config/msckf-mynt_imu_a27_is_svd.yaml"/>
+
+  <!-- gt_tf_publisher Nodelet (optional) -->
+  <!--GT-->
+  <!--<include file="$(find robot_localization)/launch/gt_tf_broadcaster.launch">
+    <arg name="rviz_gt" value="false"/>
+    <arg name="gt_output_path"  value="$(arg output_path)"/>
+    <arg name="gt_tf_calibration_file" value="$(arg ackermann_calibration_file)"/>
+  </include>-->
+
+  <!-- Image Processor Nodelet  -->
+  <include file="$(find ackermann_msckf)/launch/image_processor_ack_msckf.launch">
+    <arg name="ackermann_robot" value="$(arg ackermann_robot)"/>
+    <arg name="ackermann_calibration_file" value="$(arg ackermann_calibration_file)"/>
+  </include>
+
+  <!-- ackermann_msckf Nodelet  -->
+  <group ns="$(arg ackermann_robot)">
+    <node pkg="nodelet" type="nodelet" name="ackermann_msckf"
+      args='standalone ackermann_msckf/AckermannMsckfNodelet'
+      output="screen">
+
+      <!-- Calibration parameters -->
+      <rosparam command="load" file="$(arg ackermann_calibration_file)"/>
+
+      <param name="publish_tf" value="true"/>
+      <param name="frame_rate" value="30"/>
+
+      <param name="fixed_frame_id" value="$(arg ackermann_fixed_frame_id)"/>
+      <param name="child_frame_id" value="$(arg ackermann_child_frame_id)"/>
+
+      <param name="max_cam_state_size" value="10"/>
+      <param name="position_std_threshold" value="8.0"/>
+
+      <param name="rotation_threshold" value="0.2618"/>
+      <param name="translation_threshold" value="0.4"/>
+      <param name="tracking_rate_threshold" value="0.5"/>
+
+      <!-- Feature optimization config -->
+      <param name="feature/config/translation_threshold" value="-1.0"/>
+
+      <!-- These values should be standard deviation -->
+      <!-- These Last two values should be covariance -->
+      <!--continuous-time-->
+      <!--x10-->
+      <param name="noise/gyro" value="0.0013513"/>
+      <param name="noise/acc" value="0.0082364"/>
+      <param name="noise/gyro_bias" value="0.0000209"/>
+      <param name="noise/acc_bias" value="0.0025105"/>
+      <param name="initial_covariance/gyro_bias" value="4.3681e-10"/>
+      <param name="initial_covariance/acc_bias" value="6.30261025e-6"/>
+
+      <param name="noise/feature" value="0.035"/>
+
+      <param name="initial_state/velocity/x" value="0.0"/>
+      <param name="initial_state/velocity/y" value="0.0"/>
+      <param name="initial_state/velocity/z" value="0.0"/>
+      <param name="initial_state/gyro_bias_a" value="$(arg ackermann_msckf_gyro_bias_a)"/>
+      <param name="initial_state/gyro_bias_b" value="$(arg ackermann_msckf_gyro_bias_b)"/>
+      <param name="initial_state/gyro_bias_c" value="$(arg ackermann_msckf_gyro_bias_c)"/>
+
+      <!-- These values should be covariance -->
+      <param name="initial_covariance/velocity" value="0.25"/>
+      <param name="initial_covariance/extrinsic_rotation_cov" value="3.0462e-4"/>
+      <param name="initial_covariance/extrinsic_translation_cov" value="2.5e-5"/>
+
+      <remap from="~imu" to="/mynteye/imu/data_raw"/>
+      <remap from="~features" to="image_processor_ackermann/features"/>
+      <remap from="~ackermann" to="/vehicle_msgs_canpal/AckermannDriveStamped"/>
+      <remap from="~gt" to="/gps_rtk_msgs/gt_odom_G"/>
+
+      <param name="ackermann_wheel_base" value="1.9"/>
+      <param name="ackermann_tire_base" value="0.98"/>
+      <param name="ackermann_steer_ratio" value="360/21"/>
+      <param name="ackermann_rate" value="150"/>
+
+      <!--discrete-time-->
+      <!--0.3 m/s-->
+      <param name="noise/ackermann_velocity_x_std" value="0.3"/>
+      <param name="noise/ackermann_velocity_y_std" value="0.3"/>
+      <!--5.0 m/s-->
+      <param name="noise/ackermann_velocity_z_std" value="5.0"/>
+      <!--50/(360/21) ~= 3.0 deg-->
+      <param name="noise/ackermann_steerAngle_std" value="50"/>
+      <!--3.0 deg-->
+      <param name="noise/ackermann_heading_white_std" value="3.0"/>
+      
+      <!--debug-->
+      <param name="use_a27_platform" value="$(arg ackermann_msckf_use_a27_platform)"/>
+      <param name="use_svd_ex" value="$(arg ackermann_msckf_use_svd_ex)"/>
+      <param name="use_debug" value="$(arg ackermann_msckf_use_debug)"/>
+      <param name="use_ackermann" value="$(arg ackermann_msckf_use_ackermann)"/>
+      <param name="use_offline_bias" value="$(arg ackermann_msckf_use_offline_gyro_bias)"/>
+      <param name="output_path"   value="$(arg output_path)"/>
+      <param name="ackermann_update_v" value="$(arg ackermann_update_v)"/>
+      <param name="ackermann_update_q" value="$(arg ackermann_update_q)"/>
+      <param name="ackermann_update_v_ci" value="$(arg ackermann_update_v_ci)"/>
+      <param name="ackermann_update_q_ci" value="$(arg ackermann_update_q_ci)"/>
+      
+    </node>
+  </group>
+  
+  <!-- RVIZ -->
+  <node if="$(arg rviz_ackermann_msckf)" pkg="rviz" type="rviz" name="rviz"
+        args="-d $(find ackermann_msckf)/rviz/vehicle_ackermann_vio.rviz"/>
+
+</launch>
