@@ -29,11 +29,11 @@
 
   <!-- gt_tf_publisher Nodelet (optional) -->
   <!--GT-->
-  <include file="$(find robot_localization)/launch/gt_tf_broadcaster.launch">
+  <!--<include file="$(find robot_localization)/launch/gt_tf_broadcaster.launch">
     <arg name="rviz_gt" value="false"/>
     <arg name="gt_output_path"  value="$(arg output_path)"/>
     <arg name="gt_tf_calibration_file" value="$(arg ackermann_calibration_file)"/>
-  </include>
+  </include>-->
 
   <!-- Image Processor Nodelet  -->
   <include file="$(find ackermann_msckf)/launch/image_processor_ack_msckf.launch">
