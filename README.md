@@ -12,7 +12,7 @@ ACK-MSCKF [1] is a tightly-coupled Ackermann stereo visual-inertial odometry (VI
 
 A novel consistent monocular Ackermann VIO (MAVIO) considering the lever arm effect between the vehicle and IMU coordinates was proposed to further improve the positioning accuracy of ACK-MSCKF, and now MAVIO can be publicly accessed from,
 
-​		https://github.com/qdensh/MAVIO
+- https://github.com/qdensh/MAVIO
 
 ------
 
